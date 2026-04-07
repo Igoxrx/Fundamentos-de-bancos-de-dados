@@ -1,0 +1,139 @@
+CREATE TABLE eempresa.empregado (
+    enome varchar(100),
+    cpf varchar(11) PRIMARY KEY,
+    endereco varchar(100),
+    nasc date,
+    sexo char(1),
+    salario numeric,
+    chefe varchar(11),
+    cdep integer
+);
+
+SELECT * FROM eempresa.empregado
+
+CREATE TABLE eempresa.departamento (
+    dnome varchar(100),
+    codigo integer PRIMARY KEY,
+    gerente varchar(11)
+);
+
+SELECT * FROM eempresa.departamento
+
+CREATE TABLE eempresa.projeto (
+    pnome varchar(100),
+    pcodigo varchar(3) PRIMARY KEY,
+    cidade varchar(100),
+    cdep integer
+);
+
+SELECT * FROM eempresa.projeto
+
+CREATE TABLE eempresa.tarefa (
+    cpf varchar(11),
+    pcodigo varchar(3),
+    horas numeric,
+    PRIMARY KEY (cpf, pcodigo)
+);
+
+CREATE TABLE eempresa.dunidade (
+    dcodigo integer,
+    dcidade varchar(100)PRIMARY KEY
+);
+
+ALTER TABLE eempresa.empregado
+ADD CONSTRAINT salario_minimo CHECK (salario >= 1412.00);
+
+INSERT INTO eempresa.empregado (enome, cpf, endereco, nasc, sexo, salario, chefe, cdep) VALUES
+('Chiquin', '1234', 'rua 1, 1', '1962-02-02', 'M', 10000.00, '8765', 3),
+('Helenita', '4321', 'rua 2, 2', '1963-03-03', 'F', 12000.00, '6543', 2),
+('Pedrin', '5678', 'rua 3, 3', '1964-04-04', 'M', 9000.00, '6543', 2),
+('Valtin', '8765', 'rua 4, 4', '1965-05-05', 'M', 15000.00, NULL, 4),
+('Zulmira', '3456', 'rua 5, 5', '1966-06-06', 'F', 12000.00, '8765', 3),
+('Zefinha', '6543', 'rua 6, 6', '1967-07-07', 'F', 10000.00, '8765', 2);
+
+INSERT INTO eempresa.departamento (dnome, codigo, gerente) VALUES
+('Pesquisa', 3, '1234'),
+('Marketing', 2, '6543'),
+('Administração', 4, '8765');
+
+INSERT INTO eempresa.projeto (pnome, pcodigo, cidade, cdep) VALUES
+('ProdutoA', 1, 'Cumbuco', 3),
+('ProdutoB', 2, 'Icapuí', 3),
+('Informatização', 3, 'Fortaleza', 4),
+('Divulgação', 4, 'Morro Branco', 2);
+
+INSERT INTO eempresa.tarefa (cpf, pcodigo, horas) VALUES
+('1234', 1, 30.0),
+('1234', 2, 10.0),
+('4321', 1, 5.0),
+('4321', 4, 35.0),
+('5678', 4, 40.0),
+('8765', 3, 32.0),
+('8765', 4, 8.0),
+('3456', 1, 10.0),
+('3456', 2, 25.0),
+('3456', 4, 5.0),
+('6543', 2, 40.0);
+
+INSERT INTO eempresa.dunidade (dcodigo, dcidade) VALUES
+(2, 'Morro Branco'),
+(3, 'Cumbuco'),
+(3, 'Prainha'),
+(3, 'Taíba'),
+(3, 'Icapuí'),
+(4, 'Fortaleza');
+
+ALTER TABLE Departamento 
+	ADD CONSTRAINT gerente FOREIGN KEY (gerente)
+	REFERENCES Empregados (cpf);
+
+ --QUESTÃO2
+--a)
+SELECT E.enome
+FROM Empregados E
+INNER JOIN Departamento D ON E.cdep = D.codigo
+WHERE D.dnome = 'Marketing';
+
+--b)
+SELECT E.cpf
+FROM Empregados E
+JOIN Departamento D ON D.codigo = E.cdep
+WHERE D.dnome = 'Pesquisa'
+UNION
+SELECT D.gerente
+FROM Departamento D
+WHERE D.dnome = 'Pesquisa';
+
+--c)
+SELECT DISTINCT P.cidade, P.pnome
+FROM Projeto P
+JOIN Tarefa T ON T.pcodigo = P.pcodigo
+WHERE T.horas >= 30.00
+ORDER BY P.cidade, P.pnome;
+
+--d)
+SELECT E.enome, E.nasc
+FROM Empregados E 
+JOIN Departamento D ON D.gerente = E.cpf
+ORDER BY E.enome, E.nasc;
+
+--e)
+SELECT E.enome, E.endereco
+FROM Empregados E
+JOIN Departamento D ON D.codigo = E.cdep
+WHERE D.dnome = 'Pesquisa'
+
+--f)
+SELECT P.pcodigo, D.dnome, E.enome
+FROM Projeto P
+JOIN Departamento D ON D.codigo = P.cdep
+JOIN Empregados E ON E.cpf = D.gerente
+WHERE P.cidade = 'Icapuí';
+
+--g)
+SELECT E.enome, E.sexo
+FROM Empregados E
+WHERE E.cpf NOT IN(
+	SELECT D.gerente
+	FROM Departamento D);
+)

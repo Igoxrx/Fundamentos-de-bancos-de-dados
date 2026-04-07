@@ -1,0 +1,483 @@
+João Igor Almeida Gomes - 538294
+
+-- Criando tabela 'Empregado'
+
+CREATE TABLE empresa.empregado
+(
+	enome varchar(50) NOT NULL,
+	cpf varchar(4) NOT NULL,
+	endereco varchar(50),
+	nasc timeStamp,
+	sexo char,
+	salario numeric(7, 2) NOT NULL,
+	chefe varchar(4),
+	cdep integer NOT NULL,
+	PRIMARY KEY (cpf),
+	FOREIGN KEY (chefe) 
+		REFERENCES empresa.empregado (cpf) 
+		ON DELETE SET NULL 
+		DEFERRABLE INITIALLY DEFERRED
+);
+
+-- Criando tabela 'Departamento'
+
+CREATE TABLE empresa.departamento
+(
+	dnome varchar(50) NOT NULL,
+	codigo integer NOT NULL,
+	gerente varchar(4) NOT NULL,
+	PRIMARY KEY (codigo),
+	FOREIGN KEY (gerente)
+		REFERENCES empresa.empregado (cpf) 
+		ON DELETE SET NULL
+		DEFERRABLE INITIALLY DEFERRED
+);
+
+-- Adicionando chave estrangeira na tabela 'Empregado'
+
+ALTER TABLE empresa.empregado 
+	ADD FOREIGN KEY (cdep) 
+		REFERENCES empresa.departamento (codigo) 
+		ON DELETE CASCADE
+		DEFERRABLE INITIALLY DEFERRED
+
+-- Criando tabela 'Projeto'
+
+CREATE TABLE empresa.projeto
+(
+	pnome varchar(50) NOT NULL,
+	pcodigo varchar(3) NOT NULL,
+	cidade varchar(50) NOT NULL,
+	cdep integer NOT NULL,
+	PRIMARY KEY (pcodigo),
+	FOREIGN KEY (cdep) 
+		REFERENCES empresa.departamento (codigo) 
+		ON DELETE CASCADE
+);
+
+-- Criando tabela 'Tarefa'
+
+CREATE TABLE empresa.tarefa
+(
+	cpf varchar(4) NOT NULL,
+	pcodigo varchar(3) NOT NULL,
+	horas numeric(3, 1) NOT NULL,
+	PRIMARY KEY (cpf, pcodigo),
+	FOREIGN KEY (cpf)
+		REFERENCES empresa.empregado (cpf)
+		ON DELETE CASCADE,
+	FOREIGN KEY (pcodigo) 
+		REFERENCES empresa.projeto (pcodigo) 
+		ON DELETE CASCADE
+);
+
+-- Criando tabela 'DUnidade'
+
+CREATE TABLE empresa.dunidade
+(
+	dcodigo integer NOT NULL,
+	dcidade varchar(50) NOT NULL,
+	PRIMARY KEY (dcodigo, dcidade),
+	FOREIGN KEY (dcodigo) 
+		REFERENCES empresa.departamento (codigo) 
+		ON DELETE CASCADE
+);
+
+-- Povoando tabela 'Empregado' e 'Departamento' juntas
+-- para nao violar restricao de chave estrangeira
+
+INSERT INTO empresa.empregado 
+	VALUES ('Chiquin', '1234', 'rua 1, 1', '02/02/62', 'M', 10000.00, '8765', 3);
+INSERT INTO empresa.empregado 
+	VALUES ('Helenita', '4321', 'rua 2, 2', '03/03/63', 'F', 12000.00, '6543', 2);
+INSERT INTO empresa.empregado 
+	VALUES ('Pedrin', '5678', 'rua 3, 3', '04/04/64', 'M', 9000.00, '6543', 2);
+INSERT INTO empresa.empregado 
+	VALUES ('Valtin', '8765', 'rua 4, 4', '05/05/65', 'M', 15000.00, NULL, 4);
+INSERT INTO empresa.empregado 
+	VALUES ('Zulmira', '3456', 'rua 5, 5', '06/06/66', 'F', 12000.00, '8765', 3);
+INSERT INTO empresa.empregado 
+	VALUES ('Zefinha', '6543', 'rua 6, 6', '07/07/67', 'F', 10000.00, '8765', 2);
+INSERT INTO empresa.departamento
+	VALUES ('Pesquisa', 3, '1234');
+INSERT INTO empresa.departamento
+	VALUES ('Marketing', 2, '6543');
+INSERT INTO empresa.departamento
+	VALUES ('Administracao', 4, '8765');
+	
+-- Povoando tabela 'Projeto'
+
+INSERT INTO empresa.projeto
+	VALUES ('ProdutoA', 'PA', 'Cumbuco', 3);
+INSERT INTO empresa.projeto
+	VALUES ('ProdutoB', 'PB', 'Icapui', 3);
+INSERT INTO empresa.projeto
+	VALUES ('Informatizacao', 'Inf', 'Fortaleza', 4);
+INSERT INTO empresa.projeto
+	VALUES ('Divulgacao', 'Div', 'Morro Branco', 2);
+	
+-- Povoando tabela 'Tarefa'
+
+INSERT INTO empresa.tarefa
+	VALUES ('1234', 'PA', 30.0);
+INSERT INTO empresa.tarefa
+	VALUES ('1234', 'PB', 10.0);
+INSERT INTO empresa.tarefa
+	VALUES ('4321', 'PA', 5.0);
+INSERT INTO empresa.tarefa
+	VALUES ('4321', 'Div', 35.0);
+INSERT INTO empresa.tarefa
+	VALUES ('5678', 'Div', 40.0);
+INSERT INTO empresa.tarefa
+	VALUES ('8765', 'Inf', 32.0);
+INSERT INTO empresa.tarefa
+	VALUES ('8765', 'Div', 8.0);
+INSERT INTO empresa.tarefa
+	VALUES ('3456', 'PA', 10.0);
+INSERT INTO empresa.tarefa
+	VALUES ('3456', 'PB', 25.0);
+INSERT INTO empresa.tarefa
+	VALUES ('3456', 'Div', 5.0);
+INSERT INTO empresa.tarefa
+	VALUES ('6543', 'PB', 40.0);
+	
+-- Povoando 'DUnidade'
+
+INSERT INTO empresa.dunidade
+	VALUES (2, 'Morro Branco');
+INSERT INTO empresa.dunidade
+	VALUES (3, 'Cumbuco');
+INSERT INTO empresa.dunidade
+	VALUES (3, 'Prainha');
+INSERT INTO empresa.dunidade
+	VALUES (3, 'Taiba');
+INSERT INTO empresa.dunidade
+	VALUES (3, 'Icapui');
+INSERT INTO empresa.dunidade
+	VALUES (4, 'Fortaleza');
+
+---------------------------------------------
+SELECT d.dnome
+FROM empresa.departamento d
+JOIN empresa.empregado e ON d.codigo = e.cdep
+GROUP BY d.dnome
+ORDER BY AVG(e.salario) DESC
+LIMIT 1;
+
+------------------------------------------
+
+SELECT 
+    d.dnome,
+    ROUND(MAX(e.salario), 2) AS maior_salario,
+    ROUND(MIN(e.salario), 2) AS menor_salario,
+    ROUND(AVG(e.salario), 2) AS media_salarial
+FROM 
+    empresa.departamento d
+JOIN 
+    empresa.empregado e ON d.codigo = e.cdep
+GROUP BY 
+    d.dnome;
+
+-----------------------------------------
+
+SELECT 
+    d.dnome,
+    e.enome AS nome_gerente,
+    COUNT(DISTINCT emp.cpf) AS quantidade_empregados,
+    COUNT(DISTINCT p.pcodigo) AS quantidade_projetos,
+    COUNT(DISTINCT u.dcodigo) AS quantidade_unidades
+FROM 
+    empresa.departamento d
+LEFT JOIN 
+    empresa.empregado e ON d.gerente = e.cpf
+LEFT JOIN 
+    empresa.empregado emp ON d.codigo = emp.cdep
+LEFT JOIN 
+    empresa.projeto p ON d.codigo = p.cdep
+LEFT JOIN 
+    empresa.dunidade u ON d.codigo = u.dcodigo
+GROUP BY 
+    d.dnome, e.enome;
+
+-----------------------------------------
+
+SELECT 
+    p.pnome
+FROM 
+    empresa.projeto p
+JOIN 
+    empresa.tarefa t ON p.pcodigo = t.pcodigo
+GROUP BY 
+    p.pnome
+ORDER BY 
+    SUM(t.horas) DESC
+LIMIT 1;
+
+
+
+-----------------------------------------
+
+
+SELECT 
+    p.pnome
+FROM 
+    empresa.projeto p
+JOIN 
+    empresa.tarefa t ON p.pcodigo = t.pcodigo
+GROUP BY 
+    p.pnome
+ORDER BY 
+    SUM(t.horas) DESC
+LIMIT 1;
+
+--------------------------------------------
+SELECT 
+    p.pnome,
+    e.enome AS nome_gerente,
+    SUM(t.horas) AS total_horas_alocadas,
+    COUNT(DISTINCT t.cpf) AS quantidade_empregados_alocados,
+    (SUM(t.horas) * 100) AS custo_mensal -- Assumindo um custo de R$ 100 por hora
+FROM 
+    empresa.projeto p
+JOIN 
+    empresa.departamento d ON p.cdep = d.codigo
+JOIN 
+    empresa.empregado e ON d.gerente = e.cpf
+LEFT JOIN 
+    empresa.tarefa t ON p.pcodigo = t.pcodigo
+GROUP BY 
+    p.pnome, e.enome;
+--------------------------------------------
+SELECT 
+    e.enome
+FROM 
+    empresa.empregado e
+WHERE 
+    e.enome LIKE '% Silva'
+AND 
+    e.cpf IN (SELECT d.gerente FROM empresa.departamento d);
+
+
+-----------------------------------------
+
+
+SELECT DISTINCT 
+    e.enome
+FROM 
+    empresa.empregado e
+JOIN 
+    empresa.departamento d ON e.cpf = d.gerente
+JOIN 
+    empresa.projeto p ON d.codigo = p.cdep
+JOIN 
+    empresa.tarefa t ON p.pcodigo = t.pcodigo
+WHERE 
+    e.cpf IN (SELECT DISTINCT t.cpf FROM empresa.tarefa t);
+
+
+
+-----------------------------------------
+
+
+SELECT DISTINCT 
+    e.enome
+FROM 
+    empresa.empregado e
+JOIN 
+    empresa.tarefa t ON e.cpf = t.cpf
+JOIN 
+    empresa.projeto p ON t.pcodigo = p.pcodigo
+JOIN 
+    empresa.departamento d ON p.cdep = d.codigo
+WHERE 
+    d.codigo <> e.cdep; 
+
+
+-----------------------------------------
+
+
+SELECT 
+    e.enome
+FROM 
+    empresa.empregado e
+JOIN 
+    empresa.tarefa t ON e.cpf = t.cpf
+JOIN 
+    empresa.projeto p ON t.pcodigo = p.pcodigo
+GROUP BY 
+    e.cpf, e.enome
+HAVING 
+    COUNT(DISTINCT p.pcodigo) = (SELECT COUNT(*) FROM empresa.projeto);
+
+
+-----------------------------------------
+
+
+SELECT 
+    e.enome AS nome_empregado,
+    e.salario,
+    d.dnome AS nome_departamento
+FROM 
+    empresa.empregado e
+LEFT JOIN 
+    empresa.departamento d ON e.cdep = d.codigo
+UNION ALL
+SELECT 
+    NULL AS nome_empregado,
+    NULL AS salario,
+    d.dnome AS nome_departamento
+FROM 
+    empresa.departamento d
+WHERE 
+    d.codigo NOT IN (SELECT DISTINCT cdep FROM empresa.empregado)
+ORDER BY 
+    salario DESC NULLS LAST;
+
+
+
+-----------------------------------------
+
+
+
+SELECT 
+    e.enome AS nome_empregado,
+    c.enome AS nome_chefe,
+    g.enome AS nome_gerente
+FROM 
+    empresa.empregado e
+LEFT JOIN 
+    empresa.empregado c ON e.chefe = c.cpf  -- Junta para obter o chefe do empregado
+LEFT JOIN 
+    empresa.departamento d ON e.cdep = d.codigo  -- Junta para obter o departamento do empregado
+LEFT JOIN 
+    empresa.empregado g ON d.gerente = g.cpf;  -- Junta para obter o gerente do departamento
+
+
+
+
+-----------------------------------------
+
+
+
+WITH MediaSalarialEmpresa AS (
+    SELECT AVG(salario) AS media_empresa
+    FROM empresa.empregado
+)
+
+SELECT 
+    d.dnome AS nome_departamento
+FROM 
+    empresa.departamento d
+JOIN 
+    empresa.empregado e ON d.codigo = e.cdep
+GROUP BY 
+    d.dnome
+HAVING 
+    AVG(e.salario) > (SELECT media_empresa FROM MediaSalarialEmpresa);
+
+
+
+-----------------------------------------
+
+
+
+SELECT 
+    e.enome AS nome_empregado,
+    e.salario,
+    d.dnome AS nome_departamento
+FROM 
+    empresa.empregado e
+JOIN 
+    empresa.departamento d ON e.cdep = d.codigo
+WHERE 
+    e.salario > (
+        SELECT AVG(salario) 
+        FROM empresa.empregado 
+        WHERE cdep = d.codigo
+    );
+
+
+
+-----------------------------------------
+
+
+
+SELECT 
+    e.enome AS nome_empregado,
+    d.dnome AS nome_departamento
+FROM 
+    empresa.empregado e
+JOIN 
+    empresa.departamento d ON e.cdep = d.codigo
+JOIN 
+    empresa.dunidade u ON d.codigo = u.dcodigo
+WHERE 
+    u.dcidade = 'Fortaleza';
+
+
+
+
+-----------------------------------------
+
+
+
+SELECT 
+    d.dnome AS nome_departamento
+FROM 
+    empresa.departamento d
+JOIN 
+    (SELECT cdep, AVG(salario) AS media_salario
+     FROM empresa.empregado
+     GROUP BY cdep) AS media
+ON 
+    d.codigo = media.cdep
+JOIN 
+    empresa.empregado e ON d.codigo = e.cdep
+WHERE 
+    e.salario > 2 * media.media_salario
+GROUP BY 
+    d.dnome;
+
+
+-----------------------------------------
+
+
+SELECT 
+    enome AS nome_empregado,
+    salario
+FROM 
+    empresa.empregado
+WHERE 
+    salario BETWEEN 700 AND 2800;
+
+
+
+
+
+-----------------------------------------
+
+
+
+
+SELECT 
+    d.dnome AS nome_departamento
+FROM 
+    empresa.departamento d
+JOIN 
+    empresa.projeto p ON d.codigo = p.cdep
+JOIN 
+    empresa.tarefa t ON p.pcodigo = t.pcodigo
+GROUP BY 
+    d.dnome
+HAVING 
+    SUM(CASE WHEN t.cpf IS NOT NULL THEN 1 ELSE 0 END) > 50
+    AND 
+    SUM(CASE WHEN t.cpf IS NOT NULL THEN 1 ELSE 0 END) < 5;
+
+
+
+
+-----------------------------------------
+
+
+
